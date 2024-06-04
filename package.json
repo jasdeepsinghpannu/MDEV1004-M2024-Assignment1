@@ -1,6 +1,6 @@
 {
-  "name": "ice3",
-  "version": "0.0.3",
+  "name": "mdev1004-m2024-assignment1",
+  "version": "0.0.5",
   "private": true,
   "scripts": {
     "start": "node server.js"
