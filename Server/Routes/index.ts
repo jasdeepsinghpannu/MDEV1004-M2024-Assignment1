@@ -2,7 +2,27 @@ import express from 'express';
 const router = express.Router();
 
 import { AddMovie, DeleteMovie, DisplayMovieById, DisplayMovieList, UpdateMovie } from '../Controllers/movie';
+import { ProcessLogin, ProcessLogout, ProcessRegistration } from '../Controllers/auth';
 
+/* List of Authentication (endpoints) */
+
+/* Register User. */
+router.post('/register', (req, res, next) => {
+  // Display some data
+  ProcessRegistration(req,res,next);
+});
+
+/* Login User. */
+router.post('/login', (req, res, next) => {
+  // Display some data
+  ProcessLogin(req,res,next);
+});
+
+/* Logut User. */
+router.get('/logout', (req, res, next) => {
+  // Display some data
+  ProcessLogout(req,res,next);
+});
 
 /* List of routes (endpoints) */
 
@@ -34,6 +54,27 @@ router.put('/update/:id', (req, res, next) => {
 router.delete('/delete/:id', (req, res, next) => {
   // Display some data
   DeleteMovie(req,res,next);
+});
+
+
+/* List of Authentication (endpoints) */
+
+/* Register User. */
+router.post('/register', (req, res, next) => {
+  // Display some data
+  ProcessRegistration(req,res,next);
+});
+
+/* Login User. */
+router.post('/login', (req, res, next) => {
+  // Display some data
+  ProcessLogin(req,res,next);
+});
+
+/* Logut User. */
+router.get('/logout', (req, res, next) => {
+  // Display some data
+  ProcessLogout(req,res,next);
 });
 
 export default router;

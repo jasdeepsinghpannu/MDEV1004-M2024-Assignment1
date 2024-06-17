@@ -135,6 +135,13 @@ export function UpdateMovie(req:Request, res: Response, next: NextFunction): voi
         }
 }
 
+/**
+ * This function is responsible for deleting a movie by its id
+ * 
+ * @param req 
+ * @param res 
+ * @param next 
+ */
 export function DeleteMovie(req:Request, res: Response, next:NextFunction): void {
     let id = req.params.id;
     
