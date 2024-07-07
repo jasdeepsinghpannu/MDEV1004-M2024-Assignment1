@@ -1,36 +1,51 @@
 import createError, { HttpError } from 'http-errors';
-import express, { NextFunction, Request, Response } from'express';
-import cookieParser from'cookie-parser';
+import express, { NextFunction, Request, Response } from 'express';
+import cookieParser from 'cookie-parser';
 import logger from 'morgan';
 import dotenv from 'dotenv';
 dotenv.config();
 
-// Modules for authentication
+// modules for authentication
 import session from 'express-session';
 import passport from 'passport';
 import passportLocal from 'passport-local';
 
-// Define Authentication Strategy
-let strategy = passportLocal.Strategy;
+// prevent memory leaks with memorystore
+import createMemoryStore from 'memorystore';
+const MemoryStore = createMemoryStore(session);
 
-// Import the User Model
+// modules for JWT support
+import cors from 'cors';
+import passportJWT from 'passport-jwt';
+
+// define JWT Aliases
+let JWTStrategy = passportJWT.Strategy; // alias
+let ExtractJWT = passportJWT.ExtractJwt; // alias
+
+// define authentication strategy
+//let strategy = passportLocal.Strategy; // alias
+
+// import the User Model
 import User from '../Models/user';
 
-// Import mongoose and related modules
+// import mongoose and related modules
 import mongoose from 'mongoose';
 import db from './db';
 
 mongoose.connect(db.remoteURI);
 
-// DB Connection events
+// DB Connection Events
 mongoose.connection.on('connected', () => {
   console.log(`Connected to MongoDB Atlas`);
 })
 
+
 import indexRouter from '../Routes/index';
+import movieRouter from '../Routes/movie';
+
 import { dot } from 'node:test/reporters';
 
-// Create an express application
+// create an express application
 const app = express();
 
 app.use(logger('dev'));
@@ -38,26 +53,61 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 
-//setup express session
+// add cors to the config
+app.use(cors());
+
+// setup express session
 app.use(session({
+  cookie: { maxAge: 86400000}, // 1 day in milliseconds
+  store: new MemoryStore({checkPeriod: 86400000}), // 1 day in milliseconds
   secret: db.secret,
   saveUninitialized: false,
   resave: false
 }));
 
-//Initialise passport and session
+// initialize passport and session
 app.use(passport.initialize());
 app.use(passport.session());
 
-//Implement authentication strategy
+// implement an authentication strategy
 passport.use(User.createStrategy());
 
-//Serialise and deserialise the user info
+// serialize and deserialize the User info
 passport.serializeUser(User.serializeUser() as any);
 passport.deserializeUser(User.deserializeUser());
 
+//setup JWT options
+let jwtOptions = 
+{
+  jwtFromRequest: ExtractJWT.fromAuthHeaderAsBearerToken(),
+  secretOrKey: db.secret
+};
+
+// setup JWT Strategy
+let strategy = new JWTStrategy(jwtOptions, (jwt_payload, done) =>
+{
+  try 
+  {
+    const user = User.findById(jwt_payload.id);
+    if (user) 
+    {
+      return done(null, user);
+    } 
+    return done(null, false);
+
+  } catch (error) 
+  {
+    return done(error, null);  
+  }
+});
+
+// deploy the strategy
+passport.use(strategy);
 
 app.use('/api', indexRouter);
+/* Example: Secure the movie routes with JWT authentication */
+//app.use('/api/movie', passport.authenticate('jwt', {session: false}), movieRouter);
+app.use('/api/movie', movieRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
@@ -65,14 +115,15 @@ app.use(function(req, res, next) {
 });
 
 // error handler
-app.use(function(err:HttpError, req: Request, res:Response, next:NextFunction) {
+app.use(function(err: HttpError, req:Request, res:Response, next:NextFunction) 
+{
   // set locals, only providing error in development
   res.locals.message = err.message;
   res.locals.error = req.app.get('env') === 'development' ? err : {};
 
   // render the error page
   res.status(err.status || 500);
-  res.end('error: Please use the correct API endpoint');
+  res.end('error - please use /api as a route prefix for your API requests');
 });
 
 export default app;

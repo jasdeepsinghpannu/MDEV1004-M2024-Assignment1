@@ -7,6 +7,7 @@ exports.ProcessLogout = exports.ProcessLogin = exports.ProcessRegistration = voi
 const passport_1 = __importDefault(require("passport"));
 const mongoose_1 = __importDefault(require("mongoose"));
 const user_1 = __importDefault(require("../Models/user"));
+const Util_1 = require("../Util");
 function ProcessRegistration(req, res, next) {
     let newUser = new user_1.default({
         username: req.body.username,
@@ -15,19 +16,17 @@ function ProcessRegistration(req, res, next) {
     });
     user_1.default.register(newUser, req.body.password, (err) => {
         if (err instanceof mongoose_1.default.Error.ValidationError) {
-            console.error("All fields are required");
-            return res.status(400).json({ success: false, msg: "Error: User not registered. All fields are required" });
+            console.error("All Fields are Required");
+            return res.status(400).json({ success: false, msg: "ERROR: User not registered. All Fields are Required", data: null, token: null });
         }
         if (err) {
-            console.error("Error while inserting user");
+            console.error("ERROR: Inserting New User");
             if (err.name == "UserExistsError") {
-                console.error("Error: User already exists");
+                console.error("ERROR: User already exists");
             }
-            return res.status(400).json({ success: false, msg: "Error: User not registered.", data: null });
+            return res.status(400).json({ success: false, msg: "ERROR: User not registered", data: null, token: null });
         }
-        return passport_1.default.authenticate('local')(req, res, () => {
-            return res.json({ success: true, msg: "User Authenticated Successfully", data: newUser });
-        });
+        return res.json({ success: true, msg: "User Registered successfully", data: newUser, token: null });
     });
 }
 exports.ProcessRegistration = ProcessRegistration;
@@ -35,26 +34,28 @@ function ProcessLogin(req, res, next) {
     passport_1.default.authenticate('local', (err, user, info) => {
         if (err) {
             console.error(err);
-            return res.status(400).json({ success: false, msg: "Error: Server Error", data: null });
+            return res.status(400).json({ success: false, msg: "ERROR: Server Error", data: null, token: null });
         }
         if (!user) {
-            console.error("Login error: User Credential Error or User not found");
-            return res.status(400).json({ success: false, msg: "Error: Login Error", data: null });
+            console.error("Login Error: User Credentials Error or User Not Found");
+            return res.status(400).json({ success: false, msg: "ERROR: Login Error", data: null, token: null });
         }
         req.login(user, (err) => {
             if (err) {
                 console.error(err);
-                return res.status(400).json({ success: false, msg: "Error: Database Error", data: null });
+                return res.status(400).json({ success: false, msg: "ERROR: Database Error", data: null, token: null });
             }
-            return res.status(200).json({ success: true, msg: "User Logged in Successfully", data: user });
+            const authToken = (0, Util_1.GenerateToken)(user);
+            return res.json({ success: true, msg: "User Logged in successfully", data: user, token: authToken });
         });
+        return;
     })(req, res, next);
 }
 exports.ProcessLogin = ProcessLogin;
 function ProcessLogout(req, res, next) {
     req.logOut(() => {
-        console.log("User logged out successfully");
-        return res.json({ success: true, msg: "User Logged out Successfully", data: null });
+        console.log("User Logged out successfully");
+        return res.json({ success: true, msg: "User Logged out successfully", data: null, token: null });
     });
 }
 exports.ProcessLogout = ProcessLogout;

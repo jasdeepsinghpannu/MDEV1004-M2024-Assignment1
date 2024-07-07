@@ -2,7 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const mongoose_1 = require("mongoose");
 let movieSchema = new mongoose_1.Schema({
-    movieId: String,
+    movieID: String,
     title: String,
     studio: String,
     genres: [String],
