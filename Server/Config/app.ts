@@ -101,7 +101,7 @@ let strategy = new JWTStrategy(jwtOptions, (jwt_payload, done) =>
   }
 });
 
-// deploy the strategy
+// deploy the strategyy
 passport.use(strategy);
 
 app.use('/api', indexRouter);
